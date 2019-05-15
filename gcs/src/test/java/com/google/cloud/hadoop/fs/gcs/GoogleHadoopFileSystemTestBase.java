@@ -14,6 +14,7 @@
 
 package com.google.cloud.hadoop.fs.gcs;
 
+import static com.google.cloud.hadoop.fs.gcs.HadoopFileSystemIntegrationTest.HDFS_ROOT;
 import static com.google.common.base.Charsets.UTF_8;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
@@ -184,6 +185,15 @@ public abstract class GoogleHadoopFileSystemTestBase extends HadoopFileSystemTes
   @Test
   public void testGetCanonicalServiceName() {
     assertThat(ghfs.getCanonicalServiceName()).isNull();
+  }
+
+  /**
+   * Tests getDefaultWorkingDirectory().
+   */
+  @Test
+
+  public void testGetDefaultWorkingDirectory(){
+    assertThat(ghfs.getWorkingDirectory()).isEqualTo(ghfsHelper.ghfsFileSystemDescriptor.getFileSystemRoot());
   }
 
   /** Test implicit directories. */
