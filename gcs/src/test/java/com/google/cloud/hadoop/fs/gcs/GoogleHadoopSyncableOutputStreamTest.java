@@ -70,7 +70,7 @@ public class GoogleHadoopSyncableOutputStreamTest {
     verifyNoMoreInteractions(mockExecutorService);
   }
 
-  
+
 
   @Test
   public void testExceptionOnDelete() throws IOException, InterruptedException, ExecutionException {
@@ -104,22 +104,8 @@ public class GoogleHadoopSyncableOutputStreamTest {
     verify(mockExecutorService, times(2)).submit(any(Callable.class));
   }
 
-  @Test
-  public void testCloseTwice() throws IOException {
-    Path objectPath = new Path(ghfs.getFileSystemRoot(), "dir/object.txt");
-    FSDataOutputStream fout = ghfs.create(objectPath);
-    fout.close();
-    fout.close();  // Fine to close twice.
-  }
 
-  @Test
-  public void testWrite1AfterClose() throws IOException {
-    Path objectPath = new Path(ghfs.getFileSystemRoot(), "dir/object.txt");
-    FSDataOutputStream fout = ghfs.create(objectPath);
 
-    fout.close();
-    assertThrows(ClosedChannelException.class, () -> fout.write(42));
-  }
 
   @Test
   public void testWriteAfterClose() throws IOException {
