@@ -107,23 +107,6 @@ public class GoogleHadoopSyncableOutputStreamTest {
 
 
 
-  @Test
-  public void testWriteAfterClose() throws IOException {
-    Path objectPath = new Path(ghfs.getFileSystemRoot(), "dir/object.txt");
-    FSDataOutputStream fout = ghfs.create(objectPath);
-    fout.close();
-
-    assertThrows(ClosedChannelException.class, () -> fout.write(new byte[] {0x01}, 0, 1));
-  }
-
-  @Test
-  public void testSyncAfterClose() throws IOException {
-    Path objectPath = new Path(ghfs.getFileSystemRoot(), "dir/object.txt");
-    FSDataOutputStream fout = ghfs.create(objectPath);
-    fout.close();
-
-    assertThrows(ClosedChannelException.class, () -> fout.hsync());
-  }
 
   @Test
   public void testSyncComposite_withLargeNumberOfComposeComponents() throws Exception {
