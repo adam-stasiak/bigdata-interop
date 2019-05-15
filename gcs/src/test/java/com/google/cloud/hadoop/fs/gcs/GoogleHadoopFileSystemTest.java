@@ -16,16 +16,21 @@ package com.google.cloud.hadoop.fs.gcs;
 
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemBase.AUTHENTICATION_PREFIX;
 import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemConfiguration.GCS_LAZY_INITIALIZATION_ENABLE;
+import static com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemTestHelper.IN_MEMORY_TEST_BUCKET;
 import static com.google.cloud.hadoop.util.EntriesCredentialConfiguration.JSON_KEYFILE_SUFFIX;
 import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
+import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystem;
 import com.google.cloud.hadoop.gcsio.MethodOutcome;
 import com.google.common.flogger.LoggerConfig;
+
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.Level;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,36 +39,38 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unittests for {@link GoogleHadoopFileSystem} class. */
+/**
+ * Unittests for {@link GoogleHadoopFileSystem} class.
+ */
 @RunWith(JUnit4.class)
 public class GoogleHadoopFileSystemTest extends GoogleHadoopFileSystemIntegrationTest {
 
   @ClassRule
   public static NotInheritableExternalResource storageResource =
-      new NotInheritableExternalResource(GoogleHadoopFileSystemTest.class) {
-        @Override
-        public void before() throws Throwable {
-          // Disable logging.
-          LoggerConfig.getConfig("").setLevel(Level.OFF);
+          new NotInheritableExternalResource(GoogleHadoopFileSystemTest.class) {
+            @Override
+            public void before() throws Throwable {
+              // Disable logging.
+              LoggerConfig.getConfig("").setLevel(Level.OFF);
 
-          ghfs = GoogleHadoopFileSystemTestHelper.createInMemoryGoogleHadoopFileSystem();
-          ghfsFileSystemDescriptor = (FileSystemDescriptor) ghfs;
+              ghfs = GoogleHadoopFileSystemTestHelper.createInMemoryGoogleHadoopFileSystem();
+              ghfsFileSystemDescriptor = (FileSystemDescriptor) ghfs;
 
-          GoogleHadoopFileSystemIntegrationTest.postCreateInit();
-        }
+              GoogleHadoopFileSystemIntegrationTest.postCreateInit();
+            }
 
-        @Override
-        public void after() {
-          GoogleHadoopFileSystemIntegrationTest.storageResource.after();
-        }
-      };
+            @Override
+            public void after() {
+              GoogleHadoopFileSystemIntegrationTest.storageResource.after();
+            }
+          };
 
   @Test
   public void testVersionString() {
     assertThat(GoogleHadoopFileSystemBase.VERSION).isNotNull();
     assertThat(
             GoogleHadoopFileSystemBase.UNKNOWN_VERSION.equals(GoogleHadoopFileSystemBase.VERSION))
-        .isFalse();
+            .isFalse();
   }
 
   @Test
@@ -80,7 +87,7 @@ public class GoogleHadoopFileSystemTest extends GoogleHadoopFileSystemIntegratio
 
   @Test
   public void lazyInitialization_deleteCall_fails_withInvalidCredentialsConfiguration()
-      throws Exception {
+          throws Exception {
     new GoogleHadoopFileSystem();
     Configuration lazyConf = new Configuration();
     lazyConf.set(GCS_LAZY_INITIALIZATION_ENABLE.getKey(), "true");
@@ -90,16 +97,16 @@ public class GoogleHadoopFileSystemTest extends GoogleHadoopFileSystemIntegratio
     lazyFs.initialize(new URI("gs://test-non-existent"), lazyConf);
 
     RuntimeException exception =
-        assertThrows(
-            RuntimeException.class,
-            () -> lazyFs.delete(new Path("gs://test-non-existent/dir"), false));
+            assertThrows(
+                    RuntimeException.class,
+                    () -> lazyFs.delete(new Path("gs://test-non-existent/dir"), false));
 
     assertThat(exception).hasMessageThat().isEqualTo("Failed to create GCS FS");
     assertThat(exception).hasCauseThat().isInstanceOf(FileNotFoundException.class);
     assertThat(exception)
-        .hasCauseThat()
-        .hasMessageThat()
-        .isEqualTo("non-existent.json (No such file or directory)");
+            .hasCauseThat()
+            .hasMessageThat()
+            .isEqualTo("non-existent.json (No such file or directory)");
 
     lazyFs.close();
   }
@@ -113,34 +120,44 @@ public class GoogleHadoopFileSystemTest extends GoogleHadoopFileSystemIntegratio
     FileSystem eagerFs = new GoogleHadoopFileSystem();
 
     FileNotFoundException exception =
-        assertThrows(
-            FileNotFoundException.class,
-            () -> eagerFs.initialize(new URI("gs://test-non-existent"), eagerConf));
+            assertThrows(
+                    FileNotFoundException.class,
+                    () -> eagerFs.initialize(new URI("gs://test-non-existent"), eagerConf));
 
     assertThat(exception)
-        .hasMessageThat()
-        .isEqualTo("non-existent.json (No such file or directory)");
+            .hasMessageThat()
+            .isEqualTo("non-existent.json (No such file or directory)");
+  }
+  /**
+   * Validates getDefaultWorkingDirectory().
+   */
+  @Test
+  public void testGetWorkingDirectory() throws Exception {
+    GoogleHadoopFileSystem googleHadoopFileSystem = new GoogleHadoopFileSystem();
+    assertThat(googleHadoopFileSystem.getDefaultWorkingDirectory()).isEqualTo(googleHadoopFileSystem.getFileSystemRoot());
   }
 
   // -----------------------------------------------------------------
   // Tests that exercise behavior defined in HdfsBehavior.
   // -----------------------------------------------------------------
 
-  /** Validates {@link GoogleHadoopFileSystem#rename}. */
+  /**
+   * Validates {@link GoogleHadoopFileSystem#rename}.
+   */
   @Test
   @Override
   public void testRename() throws IOException {
     renameHelper(
-        new HdfsBehavior() {
-          /**
-           * Returns the {@link MethodOutcome} of trying to rename an existing file into the root
-           * directory.
-           */
-          @Override
-          public MethodOutcome renameFileIntoRootOutcome() {
-            return new MethodOutcome(MethodOutcome.Type.RETURNS_TRUE);
-          }
-        });
+            new HdfsBehavior() {
+              /**
+               * Returns the {@link MethodOutcome} of trying to rename an existing file into the root
+               * directory.
+               */
+              @Override
+              public MethodOutcome renameFileIntoRootOutcome() {
+                return new MethodOutcome(MethodOutcome.Type.RETURNS_TRUE);
+              }
+            });
   }
 
   // -----------------------------------------------------------------
@@ -150,29 +167,38 @@ public class GoogleHadoopFileSystemTest extends GoogleHadoopFileSystemIntegratio
   // initialization differs from bucket-rooted initialization.
   // -----------------------------------------------------------------
   @Override
-  public void testInitializeSuccess() {}
+  public void testInitializeSuccess() {
+  }
 
   @Override
-  public void testInitializeSucceedsWhenNoProjectIdConfigured() {}
+  public void testInitializeSucceedsWhenNoProjectIdConfigured() {
+  }
 
   @Override
-  public void testInitializeWithWorkingDirectory() {}
+  public void testInitializeWithWorkingDirectory() {
+  }
 
   @Override
-  public void testIOExceptionIsThrowAfterClose() {}
+  public void testIOExceptionIsThrowAfterClose() {
+  }
 
   @Override
-  public void testFileSystemIsRemovedFromCacheOnClose() {}
+  public void testFileSystemIsRemovedFromCacheOnClose() {
+  }
 
   @Override
-  public void testConfigurablePermissions() {}
+  public void testConfigurablePermissions() {
+  }
 
   @Override
-  public void testFileStatusUser() {}
+  public void testFileStatusUser() {
+  }
 
   @Override
-  public void testCrc32cFileChecksum() {}
+  public void testCrc32cFileChecksum() {
+  }
 
   @Override
-  public void testMd5FileChecksum() {}
+  public void testMd5FileChecksum() {
+  }
 }

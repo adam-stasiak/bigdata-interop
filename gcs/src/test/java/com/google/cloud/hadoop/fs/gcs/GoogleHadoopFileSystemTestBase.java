@@ -187,14 +187,6 @@ public abstract class GoogleHadoopFileSystemTestBase extends HadoopFileSystemTes
     assertThat(ghfs.getCanonicalServiceName()).isNull();
   }
 
-  /**
-   * Tests getDefaultWorkingDirectory().
-   */
-  @Test
-
-  public void testGetDefaultWorkingDirectory(){
-    assertThat(ghfs.getWorkingDirectory()).isEqualTo(ghfsHelper.ghfsFileSystemDescriptor.getFileSystemRoot());
-  }
 
   /** Test implicit directories. */
   @Test
