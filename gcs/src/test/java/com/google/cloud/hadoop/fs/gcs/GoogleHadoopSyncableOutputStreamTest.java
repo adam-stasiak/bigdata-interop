@@ -70,51 +70,7 @@ public class GoogleHadoopSyncableOutputStreamTest {
     verifyNoMoreInteractions(mockExecutorService);
   }
 
-  @Test
-  public void testEndToEndHsync() throws Exception {
-    Path objectPath = new Path(ghfs.getFileSystemRoot(), "dir/object.txt");
-    FSDataOutputStream fout = ghfs.create(objectPath);
-
-    byte[] data1 = new byte[] { 0x0f, 0x0e, 0x0e, 0x0d };
-    byte[] data2 = new byte[] { 0x0b, 0x0e, 0x0e, 0x0f };
-    byte[] data3 = new byte[] { 0x04, 0x02 };
-    byte[] data1Read = new byte[4];
-    byte[] data2Read = new byte[4];
-    byte[] data3Read = new byte[2];
-
-    fout.write(data1, 0, data1.length);
-    fout.hsync();
-
-    assertThat(ghfs.getFileStatus(objectPath).getLen()).isEqualTo(4);
-    FSDataInputStream fin = ghfs.open(objectPath);
-    fin.read(data1Read);
-    fin.close();
-    assertThat(data1Read).isEqualTo(data1);
-
-    fout.write(data2, 0, data2.length);
-    fout.hsync();
-
-    assertThat(ghfs.getFileStatus(objectPath).getLen()).isEqualTo(8);
-    fin = ghfs.open(objectPath);
-    fin.read(data1Read);
-    fin.read(data2Read);
-    fin.close();
-    assertThat(data1Read).isEqualTo(data1);
-    assertThat(data2Read).isEqualTo(data2);
-
-    fout.write(data3, 0, data3.length);
-    fout.close();
-
-    assertThat(ghfs.getFileStatus(objectPath).getLen()).isEqualTo(10);
-    fin = ghfs.open(objectPath);
-    fin.read(data1Read);
-    fin.read(data2Read);
-    fin.read(data3Read);
-    fin.close();
-    assertThat(data1Read).isEqualTo(data1);
-    assertThat(data2Read).isEqualTo(data2);
-    assertThat(data3Read).isEqualTo(data3);
-  }
+  
 
   @Test
   public void testExceptionOnDelete() throws IOException, InterruptedException, ExecutionException {
