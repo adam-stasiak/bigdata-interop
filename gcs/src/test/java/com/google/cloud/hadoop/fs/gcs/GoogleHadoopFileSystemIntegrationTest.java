@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.Truth.assertWithMessage;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertThrows;
-
 import com.google.cloud.hadoop.fs.gcs.GoogleHadoopFileSystemBase.GcsFileChecksumType;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystem;
 import com.google.cloud.hadoop.gcsio.GoogleCloudStorageFileSystemIntegrationTest;
@@ -51,6 +50,7 @@ import org.junit.ClassRule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+import javax.annotation.Nullable;
 
 /**
  * Integration tests for GoogleHadoopFileSystem class.
@@ -252,6 +252,12 @@ public class GoogleHadoopFileSystemIntegrationTest
             IllegalArgumentException.class,
             () -> ((GoogleHadoopFileSystem) ghfs).getHadoopPath(new URI("gs://foobucket/bar")));
     assertThat(expected).hasMessageThat().startsWith("Authority of URI");
+
+    expected =
+            assertThrows(
+                    IllegalArgumentException.class,
+                    () -> ((GoogleHadoopFileSystem) ghfs).getHadoopPath(new URI("gs:///")));
+    assertThat(expected).hasMessageThat().startsWith("Missing authority in gcsPath");
   }
 
   /**
@@ -515,6 +521,40 @@ public class GoogleHadoopFileSystemIntegrationTest
   }
 
   @Test
+  public void testCreateFSDataOutputStream() throws IOException {
+    Path path = new Path("/directory1/");
+
+    assertThrows("hadoopPath must not be null",IllegalArgumentException.class, () -> ghfs.create(null));
+    assertThrows("replication must be a positive integer: -1",IllegalArgumentException.class, () -> ghfs.create(path, (short) -1));
+    assertThrows("blockSize must be a positive integer: -1",IllegalArgumentException.class, () -> ghfs.create(path,true,-1,(short) 1,-1));
+  }
+
+  @Test
+  public void testRenameNullFile()  {
+    Path path = new Path("/directory1/");
+
+    assertThrows("src must not be null", NullPointerException.class, () -> ghfs.rename(null, null));
+    assertThrows("src must not be null", NullPointerException.class, () -> ghfs.rename(null, path));
+    assertThrows("dst must not be null", NullPointerException.class, () -> ghfs.rename(null, null));
+    assertThrows("dst must not be null", NullPointerException.class, () -> ghfs.rename(null, path));
+  }
+
+  @Test
+  public void testListStatusNull()  {
+    @Nullable
+    Path path = null;
+    assertThrows("hadoopPath must not be null", IllegalArgumentException.class, () -> ghfs.listStatus(path));
+  }
+
+  @Test
+  public void testSetWorkingDirectoryNull()  {
+    @Nullable
+    Path path = null;
+    assertThrows("hadoopPath must not be null", IllegalArgumentException.class, () -> ghfs.setWorkingDirectory(path));
+  }
+
+
+  @Test
   public void testGlobStatus() throws IOException {
     Path testRoot = new Path("/directory1/");
     ghfs.mkdirs(testRoot);
@@ -569,6 +609,39 @@ public class GoogleHadoopFileSystemIntegrationTest
     assertThat(subDirectory2Files5).hasLength(2);
     assertThat(subDirectory2Files5[0].getPath().getName()).isEqualTo("file1");
     assertThat(subDirectory2Files5[1].getPath().getName()).isEqualTo("file2");
+
+    ghfs.delete(testRoot, true);
+  }
+
+  @Test
+  public void testGlobStatusOptions() throws IOException {
+    testGlobStatusFlatConcurrent(true,true);
+    testGlobStatusFlatConcurrent(true,false);
+    testGlobStatusFlatConcurrent(false,true);
+    testGlobStatusFlatConcurrent(false,false);
+  }
+
+  private void testGlobStatusFlatConcurrent(boolean flat, boolean concurent) throws IOException {
+    Configuration configuration = getConfigurationWtihImplementation();
+    configuration.set(GoogleHadoopFileSystemConfiguration.GCS_FLAT_GLOB_ENABLE.getKey(), String.valueOf(flat));
+    configuration.set(GoogleHadoopFileSystemConfiguration.GCS_CONCURRENT_GLOB_ENABLE.getKey(), String.valueOf(concurent));
+
+    ghfs.initialize(ghfs.getUri(),configuration);
+
+    Path testRoot = new Path("/directory1/");
+    ghfs.mkdirs(testRoot);
+    ghfs.mkdirs(new Path("/directory1/subdirectory1"));
+
+    byte[] data = new byte[10];
+    for (int i = 0; i < data.length; i++) {
+      data[i] = (byte) i;
+    }
+
+    createFile(new Path("/directory1/subdirectory1/file1"), data);
+
+    FileStatus[] rootDirectories = ghfs.globStatus(new Path("/d*"));
+    assertThat(rootDirectories).hasLength(1);
+    assertThat(rootDirectories[0].getPath().getName()).isEqualTo("directory1");
 
     ghfs.delete(testRoot, true);
   }
@@ -650,8 +723,23 @@ public class GoogleHadoopFileSystemIntegrationTest
     assertThat(fileChecksum.getAlgorithmName()).isEqualTo(checksumType.getAlgorithmName());
     assertThat(fileChecksum.getLength()).isEqualTo(checksumType.getByteLength());
     assertThat(fileChecksum.getBytes()).isEqualTo(checksumFn.apply(fileContent));
+    assertThat(fileChecksum.toString()).containsMatch(String.format("%s: *",checksumType.getAlgorithmName()));
 
     // Cleanup.
     assertThat(ghfs.delete(filePath, true)).isTrue();
   }
+
+  @Test
+  public void testInitializeWithEmptyWorkingDirectory() throws IOException {
+    GoogleHadoopFileSystem myGhfs = (GoogleHadoopFileSystem) ghfs;
+    Configuration config = loadConfig();
+    ghfs.initialize(myGhfs.initUri, config);
+    String rootBucketName = myGhfs.getRootBucketName();
+    config.set(
+            GoogleHadoopFileSystemConfiguration.GCS_WORKING_DIRECTORY.getKey(), "");
+    ghfs.initialize(myGhfs.initUri, config);
+
+    assertThat(ghfs.getHomeDirectory().toString()).startsWith("gs://" + rootBucketName);
+  }
+
 }
