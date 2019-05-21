@@ -21,10 +21,12 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import com.google.cloud.hadoop.gcsio.MethodOutcome;
+import com.google.cloud.hadoop.testing.TestingAccessTokenProvider;
 import com.google.common.flogger.LoggerConfig;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.logging.Level;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -175,4 +177,29 @@ public class GoogleHadoopFileSystemTest extends GoogleHadoopFileSystemIntegratio
 
   @Override
   public void testMd5FileChecksum() {}
+
+  /** Tests getGcsPath(). */
+  @Test
+  public void testGetGcsPath() throws URISyntaxException {
+    GoogleHadoopFileSystem myghfs = (GoogleHadoopFileSystem) ghfs;
+
+    URI gcsPath = new URI("gs://" + myghfs.getUri().getAuthority() + "/dir/obj");
+    URI gcsPathNotRoot = new URI("gs://" + myghfs.getUri().getAuthority() + "/dir/obj/");
+
+    assertThat(myghfs.getGcsPath(new Path(gcsPath))).isEqualTo(gcsPath);
+  }
+
+  /** Tests ports are not used */
+  @Test
+  public void testGetDefaultPortIndicatesPortsAreNotUsed() throws Exception {
+    Configuration config = new Configuration();
+    config.set("fs.gs.auth.access.token.provider.impl", TestingAccessTokenProvider.class.getName());
+    URI gsUri = new URI("gs://foobar/");
+
+    GoogleHadoopFileSystem ghfs = new GoogleHadoopFileSystem();
+    ghfs.initialize(gsUri, config);
+
+    assertThat(ghfs.getDefaultPort()).isEqualTo(-1);
+  }
+
 }

@@ -650,8 +650,23 @@ public class GoogleHadoopFileSystemIntegrationTest
     assertThat(fileChecksum.getAlgorithmName()).isEqualTo(checksumType.getAlgorithmName());
     assertThat(fileChecksum.getLength()).isEqualTo(checksumType.getByteLength());
     assertThat(fileChecksum.getBytes()).isEqualTo(checksumFn.apply(fileContent));
+    assertThat(fileChecksum.toString()).containsMatch(String.format("%s: *",checksumType.getAlgorithmName()));
 
     // Cleanup.
     assertThat(ghfs.delete(filePath, true)).isTrue();
   }
+
+  @Test
+  public void testInitializeWithEmptyWorkingDirectory() throws IOException {
+    GoogleHadoopFileSystem myGhfs = (GoogleHadoopFileSystem) ghfs;
+    Configuration config = loadConfig();
+    ghfs.initialize(myGhfs.initUri, config);
+    String rootBucketName = myGhfs.getRootBucketName();
+    config.set(
+            GoogleHadoopFileSystemConfiguration.GCS_WORKING_DIRECTORY.getKey(), "");
+    ghfs.initialize(myGhfs.initUri, config);
+
+    assertThat(ghfs.getHomeDirectory().toString()).startsWith("gs://" + rootBucketName);
+  }
+
 }
