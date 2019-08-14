@@ -51,6 +51,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -205,7 +206,7 @@ public class CoopLockIntegrationTest {
     assertThat(gcsfsIHelper.readTextFile(bucketName, logFileUri.getPath()))
         .isEqualTo(dirUri.resolve(fileName) + "\n" + dirUri + "\n");
   }
-
+@Ignore
   @Test
   public void directoryDelete_lockRenewed() throws Exception {
     String bucketName = gcsfsIHelper.createUniqueBucket("coop-delete-lock-renewed");

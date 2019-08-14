@@ -88,7 +88,7 @@ public class CoopLockLoadIntegrationTest {
     assertThat(gcsFs.exists(new URI("gs://" + gcsfsIHelper.sharedBucketName1))).isFalse();
     assertThat(gcsFs.exists(new URI("gs://" + gcsfsIHelper.sharedBucketName2))).isFalse();
   }
-
+@Ignore
   @Test
   public void moveDirectory_loadTest() throws Exception {
     GoogleCloudStorageFileSystemOptions gcsFsOptions =
