@@ -19,6 +19,8 @@ import static com.google.common.base.Preconditions.checkState;
 import com.google.api.client.googleapis.media.MediaHttpUploader;
 import com.google.api.client.googleapis.services.AbstractGoogleClientRequest;
 import com.google.api.client.http.InputStreamContent;
+import com.google.api.client.util.ExponentialBackOff;
+import com.google.api.client.util.Sleeper;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.flogger.GoogleLogger;
@@ -184,7 +186,6 @@ public abstract class AbstractGoogleAsyncWriteChannel<T extends AbstractGoogleCl
     if (uploadOperation.isDone()) {
       waitForCompletionAndThrowIfUploadFailed();
     }
-
     return pipeSinkChannel.write(buffer);
   }
 
@@ -269,7 +270,10 @@ public abstract class AbstractGoogleAsyncWriteChannel<T extends AbstractGoogleCl
       // Try-with-resource will close this end of the pipe so that
       // the writer at the other end will not hang indefinitely.
       try (InputStream uploadPipeSource = pipeSource) {
-        return uploadObject.execute();
+        return ResilientOperation.retry(ResilientOperation.getGoogleRequestCallable(uploadObject),
+                new ExponentialBackOff(),
+                RetryDeterminer.SERVER_ERRORS_OTHER,
+                IOException.class, Sleeper.DEFAULT);
       } catch (IOException ioe) {
         S response = createResponseFromException(ioe);
         if (response != null) {

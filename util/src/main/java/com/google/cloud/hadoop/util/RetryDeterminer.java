@@ -17,6 +17,7 @@
 
 package com.google.cloud.hadoop.util;
 
+import com.google.api.client.googleapis.json.GoogleJsonResponseException;
 import com.google.api.client.http.HttpResponseException;
 import java.io.IOException;
 
@@ -36,6 +37,7 @@ public abstract class RetryDeterminer<X extends Exception> {
     public boolean shouldRetry(Exception e) {
       if (e instanceof IOException) {
         return SOCKET_ERRORS.shouldRetry((IOException) e)
+                || SERVER_ERRORS_OTHER.shouldRetry((IOException) e)
             || SERVER_ERRORS.shouldRetry((IOException) e);
       }
       return false;
@@ -63,6 +65,20 @@ public abstract class RetryDeterminer<X extends Exception> {
       return false;
     }
   };
+  public static final RetryDeterminer<IOException> SERVER_ERRORS_OTHER =
+          new RetryDeterminer<IOException>() {
+            @Override
+            public boolean shouldRetry(IOException e) {
+              if (e instanceof HttpResponseException) {
+                HttpResponseException httpException = (HttpResponseException) e;
+                // TODO: Find what we should do for 400 codes that are not always transient.
+                return httpException.getStatusCode() / 100 == 4;
+              }
+              return false;
+            }
+          };
+
+
 
   /**
    * A rate limited determiner that uses a generic ApiErrorExtractor.

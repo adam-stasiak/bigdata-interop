@@ -300,25 +300,38 @@ public class GoogleCloudStorageTest {
   @Test
   public void testCreateObjectNormalOperation() throws Exception {
     byte[] testData = {0x01, 0x02, 0x03, 0x05, 0x08, 0x09};
-
     MockHttpTransport transport =
         GoogleCloudStorageTestUtils.mockTransport(
             emptyResponse(HttpStatusCodes.STATUS_CODE_NOT_FOUND),
             resumableUploadResponse(BUCKET_NAME, OBJECT_NAME),
             jsonDataResponse(
                 newStorageObject(BUCKET_NAME, OBJECT_NAME)
-                    .setSize(BigInteger.valueOf(testData.length))));
+                    .setSize(BigInteger.valueOf(testData.length))).setStatusCode(410));
 
     Storage storage = new Storage(transport, JSON_FACTORY, trackingHttpRequestInitializer);
     GoogleCloudStorage gcs = new GoogleCloudStorageImpl(GCS_OPTIONS, storage);
 
     try (WritableByteChannel writeChannel =
         gcs.create(new StorageResourceId(BUCKET_NAME, OBJECT_NAME))) {
+      ImmutableList<HttpRequest> requests = trackingHttpRequestInitializer.getAllRequests();
+      for (HttpRequest request : requests){
+        System.out.println(request.getUrl());
+        if (request.getContent()!= null){      System.out.println(request.getContent().getLength());
+        }
+      }
       assertThat(writeChannel.isOpen()).isTrue();
       writeChannel.write(ByteBuffer.wrap(testData));
     }
-
+    catch(IOException ioe){
+      ImmutableList<HttpRequest> requests = trackingHttpRequestInitializer.getAllRequests();
+      for (HttpRequest request : requests){
+        System.out.println(request.getUrl());
+        if (request.getContent()!= null){      System.out.println(request.getContent().getLength());
+        }
+      }
+    }
     ImmutableList<HttpRequest> requests = trackingHttpRequestInitializer.getAllRequests();
+
     assertThat(requests).hasSize(3);
 
     HttpRequest writeRequest = requests.get(2);
