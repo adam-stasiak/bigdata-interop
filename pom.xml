@@ -190,20 +190,36 @@
 
     <profile>
       <id>integration-test</id>
+      <properties>
+        <failsafe.rerunFailingTestsCount>3</failsafe.rerunFailingTestsCount>
+      </properties>
       <build>
         <plugins>
-          <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <configuration>
-              <excludes>
-                <exclude>none</exclude>
-              </excludes>
-              <includes>
-                <include>**/*IntegrationTest.java</include>
-              </includes>
-              <reuseForks>false</reuseForks>
-              <forkCount>1C</forkCount>
-            </configuration>
+            <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-failsafe-plugin</artifactId>
+              <executions>
+                <execution>
+                  <goals>
+                    <goal>integration-test</goal>
+                    <goal>verify</goal>
+                  </goals>
+                </execution>
+              </executions>
+              <configuration>
+                <excludes>
+                  <exclude>none</exclude>
+                </excludes>
+                <includes>
+                  <include>**/*IntegrationTest.java</include>
+                </includes>
+                <argLine>@{argLine} -mx2750m</argLine>
+                <reportNameSuffix>sponge_log</reportNameSuffix>
+                <forkCount>3</forkCount>
+                <reuseForks>true</reuseForks>
+                <parallel>methods</parallel>
+                <useUnlimitedThreads>true</useUnlimitedThreads>
+              </configuration>
           </plugin>
         </plugins>
       </build>
@@ -460,6 +476,10 @@
         </plugin>
         <plugin>
           <artifactId>maven-surefire-plugin</artifactId>
+          <version>3.0.0-M3</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-failsafe-plugin-plugin</artifactId>
           <version>3.0.0-M3</version>
         </plugin>
         <plugin>
