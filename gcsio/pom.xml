@@ -40,7 +40,7 @@
       <build>
         <plugins>
           <plugin>
-            <artifactId>maven-surefire-plugin</artifactId>
+            <artifactId>maven-failsafe-plugin</artifactId>
             <configuration>
               <excludes>
                 <exclude>none</exclude>
@@ -49,6 +49,12 @@
                 <include>**/*IntegrationTest.java</include>
                 <include>**/GoogleCloudStorageImplTest.java</include>
               </includes>
+              <argLine>@{argLine} -mx2750m</argLine>
+              <reportNameSuffix>sponge_log</reportNameSuffix>
+              <forkCount>3</forkCount>
+              <reuseForks>true</reuseForks>
+              <parallel>methods</parallel>
+              <useUnlimitedThreads>true</useUnlimitedThreads>
             </configuration>
           </plugin>
         </plugins>
