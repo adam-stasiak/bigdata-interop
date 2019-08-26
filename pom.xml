@@ -215,10 +215,6 @@
                 </includes>
                 <argLine>@{argLine} -mx2750m</argLine>
                 <reportNameSuffix>sponge_log</reportNameSuffix>
-                <forkCount>3</forkCount>
-                <reuseForks>true</reuseForks>
-                <parallel>methods</parallel>
-                <useUnlimitedThreads>true</useUnlimitedThreads>
               </configuration>
           </plugin>
         </plugins>
