@@ -60,10 +60,13 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.junit.runners.model.Statement;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 // TODO(user): add tests for multi-threaded reads/writes
 /**
  * Integration tests for GoogleCloudStorageFileSystem class.
  */
+@NotThreadSafe
 @RunWith(JUnit4.class)
 public class GoogleCloudStorageFileSystemIntegrationTest {
   private static final GoogleLogger logger = GoogleLogger.forEnclosingClass();
