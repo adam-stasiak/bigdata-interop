@@ -27,6 +27,8 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 /**
  * Integration tests for HDFS.
  *
@@ -47,6 +49,7 @@ import org.junit.runners.JUnit4;
  * the behavior of HDFS. The FileSystemDescriptor thus reroutes all the test methods through the
  * proper HDFS instance using hdfs:/ paths.
  */
+@NotThreadSafe
 @RunWith(JUnit4.class)
 public class HadoopFileSystemIntegrationTest extends HadoopFileSystemTestBase {
 

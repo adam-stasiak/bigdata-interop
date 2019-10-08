@@ -29,7 +29,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 /** Allows running all tests in HadoopFileSystemTestBase against local FS. */
+@NotThreadSafe
 @RunWith(JUnit4.class)
 public class LocalFileSystemIntegrationTest
     extends HadoopFileSystemTestBase {
