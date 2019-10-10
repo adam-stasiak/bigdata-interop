@@ -310,6 +310,9 @@ public abstract class GoogleCloudStorageIntegrationHelper {
     List<String> allNames = new ArrayList<>();
     Set<String> created = new HashSet<>();
     for (String objectName : objectNames) {
+      if (objectName != null) {
+        objectName = "dupa/" + objectName;
+      }
       for (String subdir : getSubdirs(objectName)) {
         if (created.add(subdir)) {
           allNames.add(subdir);

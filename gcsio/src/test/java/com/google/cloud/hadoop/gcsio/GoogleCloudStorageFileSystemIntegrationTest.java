@@ -196,6 +196,10 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
   private void validateFileInfoInternal(
       String bucketName, String objectName, boolean expectedToExist, FileInfo fileInfo)
       throws IOException {
+    System.out.println(fileInfo);
+    System.out.println(objectName);
+    System.out.println(expectedToExist);
+
     assertThat(fileInfo.exists()).isEqualTo(expectedToExist);
 
     long expectedSize = gcsiHelper.getExpectedObjectSize(objectName, expectedToExist);
@@ -241,6 +245,9 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
    */
   protected void validateGetItemInfo(String bucketName, String objectName, boolean expectedToExist)
       throws IOException {
+    if (objectName != null) {
+      objectName = "dupa/" + objectName;
+    }
     URI path = gcsiHelper.getPath(bucketName, objectName);
     FileInfo fileInfo = gcsfs.getFileInfo(path);
     assertThat(fileInfo.getPath()).isEqualTo(path);
@@ -275,6 +282,9 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
           pathComponents[1] = null;
         } else {
           pathComponents[0] = bucketName;
+          if (expectedListedName != null){
+            expectedListedName = "dupa/" + expectedListedName;
+          }
           pathComponents[1] = expectedListedName;
         }
         URI expectedPath = gcsiHelper.getPath(pathComponents[0], pathComponents[1]);
@@ -284,12 +294,20 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
     }
 
     // Get list of actual paths.
+    if (objectNamePrefix == null){
+      objectNamePrefix = "dupa/";
+    }
+    else {
+      objectNamePrefix = "dupa/" + objectNamePrefix;
+    }
     URI path = gcsiHelper.getPath(bucketName, objectNamePrefix);
+
     List<FileInfo> fileInfos;
     if (pathExpectedToExist) {
       fileInfos = gcsfs.listFileInfo(path);
     } else {
-      assertThrows(FileNotFoundException.class, () -> gcsfs.listFileInfo(path));
+      URI finalPath = path;
+      assertThrows(FileNotFoundException.class, () -> gcsfs.listFileInfo(finalPath));
       fileInfos = new ArrayList<>();
     }
 
