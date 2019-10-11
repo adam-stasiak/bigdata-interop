@@ -174,6 +174,12 @@ public class GoogleCloudStorageFileSystemIntegrationHelper
 
   /** Helper to construct a path. */
   protected URI getPath(String bucketName, String objectName) {
+    if (objectName == "/dupa"){
+      System.out.println("ddd");
+    }
+    if (bucketName == null){
+      System.out.println("tuciemam");
+    }
     return gcsfs.getPathCodec().getPath(bucketName, objectName, /* allowEmptyObjectName= */ true);
   }
 

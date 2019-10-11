@@ -292,13 +292,16 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
         pathToComponents.put(expectedPath, pathComponents);
       }
     }
-
+    String tempObjectNamePrefix = objectNamePrefix;
     // Get list of actual paths.
     if (objectNamePrefix == null){
       objectNamePrefix = "dupa/";
     }
     else {
       objectNamePrefix = "dupa/" + objectNamePrefix;
+    }
+    if (bucketName == null){
+      objectNamePrefix = tempObjectNamePrefix;
     }
     URI path = gcsiHelper.getPath(bucketName, objectNamePrefix);
 
@@ -399,10 +402,28 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
         MethodOutcome expectedOutcome,
         List<String> objectsExpectedToExist,
         List<String> objectsExpectedToBeDeleted) {
-
+      if (objectsExpectedToExist != null) {
+        for (int i = 0; i < objectsExpectedToExist.size(); i++) {
+          if (objectsExpectedToExist.get(i) != null) {
+            objectsExpectedToExist.set(i, "dupa/" + objectsExpectedToExist.get(i));
+        }
+          }
+      }
+      if (objectsExpectedToBeDeleted != null) {
+        for (int i = 0; i < objectsExpectedToBeDeleted.size(); i++) {
+          if (objectsExpectedToBeDeleted.get(i) != null) {
+            objectsExpectedToBeDeleted.set(i, "dupa/" + objectsExpectedToBeDeleted.get(i));
+          }
+        }
+      }
       this.description = description;
       this.bucketName = bucketName;
-      this.objectName = objectName;
+      if (objectName != null) {
+        this.objectName = "dupa/" + objectName;
+      }
+      else {
+        this.objectName = objectName;
+      }
       this.recursive = recursive;
       this.expectedOutcome = expectedOutcome;
       this.objectsExpectedToExist = objectsExpectedToExist;
@@ -938,6 +959,7 @@ public class GoogleCloudStorageFileSystemIntegrationTest {
       }
     }
   }
+
 
   /** Validates getFileInfos(). */
   @Test
